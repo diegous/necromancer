@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Necromancer</title>
+    <script type="text/javascript" src="./js/fileLoader.js"></script>
+  </head>
+  <body>
+
+    <div>
+      <h1>Cargar archivos desde carpeta</h1>
+      <input id="filePath" type="text" name="filePath">
+      <button id="loadButton">Load</button>
+    </div>
+
+    <div>
+      <h1>Archivos guardados</h1>
+      <button id="loadData">Load</button>
+      <p id="results"></p>
+    </div>
+
+  <script>
+
+    let loadButton = document.getElementById('loadButton')
+    loadButton.onclick = function () {
+      filePath = document.getElementById('filePath')
+      loadFile(filePath.value)
+    }
+
+    let loadDataButton = document.getElementById('loadData')
+    loadDataButton.onclick = function () {
+      resultsEl = document.getElementById('results')
+      loadData(resultsEl)
+    }
+
+  </script>
+</html>

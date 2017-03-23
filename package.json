@@ -1,0 +1,21 @@
+{
+  "name": "necromancer",
+  "version": "0.1.0",
+  "description": "Program that reads and indexes old files",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "test",
+    "rebuild": "electron-rebuild -f -w sqlite3"
+  },
+  "dependencies": {
+    "electron": "^1.4.1",
+    "knex": "^0.12.8",
+    "lodash": "^4.17.2",
+    "sqlite3": "^3.1.8"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.5.7",
+    "electron-reload": "^1.0.3"
+  }
+}
