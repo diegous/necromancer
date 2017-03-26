@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <title>Necromancer</title>
     <script type="text/javascript" src="./js/fileLoader.js"></script>
+    <script type="text/javascript" src="./js/databaseLoader.js"></script>
   </head>
   <body>
 
     <div>
       <h1>Cargar archivos desde carpeta</h1>
-      <input id="filePath" type="text" name="filePath">
+      <input id="filePath" type="file" name="filePath">
       <button id="loadButton">Load</button>
     </div>
 
@@ -17,21 +18,53 @@
       <h1>Archivos guardados</h1>
       <button id="loadData">Load</button>
       <p id="results"></p>
+
+      <table id="filesTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Protocolo</th>
+            <th>Nombre del Paciente</th>
+            <th>Edad</th>
+            <th>Medico Solicitante</th>
+            <th>Obra Social</th>
+            <th>Material Remitido</th>
+            <th>Descripcion Citologica</th>
+            <th>Diagnostico Oncologico</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
 
   <script>
 
-    let loadButton = document.getElementById('loadButton')
-    loadButton.onclick = function () {
-      filePath = document.getElementById('filePath')
-      loadFile(filePath.value)
-    }
+    Dexie.spawn(function*() {
+        let tableBody = document.getElementById('tableBody')
 
-    let loadDataButton = document.getElementById('loadData')
-    loadDataButton.onclick = function () {
-      resultsEl = document.getElementById('results')
-      loadData(resultsEl)
-    }
+        db.files.toArray().then(function (array) {
+          array.forEach(function (file) {
+              tableRow = tableBody.insertRow(0)
+
+              tableRow.insertCell(0).innerHTML = file.id === undefined ? "-" : file.id
+              tableRow.insertCell(0).innerHTML = file.protocolo === undefined ? "-" : file.protocolo
+              tableRow.insertCell(0).innerHTML = file.nombrePaciente === undefined ? "-" : file.nombrePaciente
+              tableRow.insertCell(0).innerHTML = file.edad === undefined ? "-" : file.edad
+              tableRow.insertCell(0).innerHTML = file.medicoSolicitante === undefined ? "-" : file.medicoSolicitante
+              tableRow.insertCell(0).innerHTML = file.obraSocial === undefined ? "-" : file.obraSocial
+              tableRow.insertCell(0).innerHTML = file.materialRemitido === undefined ? "-" : file.materialRemitido
+              tableRow.insertCell(0).innerHTML = file.descripcionCitologica === undefined ? "-" : file.descripcionCitologica
+              tableRow.insertCell(0).innerHTML = file.diagnosticoOncologico === undefined ? "-" : file.diagnosticoOncologico
+              tableRow.insertCell(0).innerHTML = file.date === undefined ? "-" : file.date
+              tableRow.insertCell(0).innerHTML = file.fileNumber === undefined ? "-" : file.fileNumber
+          })
+        })
+
+    }).catch (err => {
+        console.error ("Uh oh! " + err.stack);
+    });
 
   </script>
 </html>

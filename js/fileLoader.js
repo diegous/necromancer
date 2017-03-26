@@ -14,14 +14,6 @@ knex.schema.createTableIfNotExists('files', function (table) {
   table.timestamps()
 })
 
-const loadFile = (path) => {
-  fs.readFile(path, 'utf-8', (err, data) => {
-    knex('files')
-      .insert({path: path, data: data})
-      .then(console.log)
-  })
-}
-
 const loadData = (el) => {
   knex
     .select('path', 'data')
@@ -29,4 +21,12 @@ const loadData = (el) => {
     .then((data) => {
       el.textContent = data
     })
+}
+
+const loadFile = (path) => {
+  fs.readFile(path, 'utf-8', (err, data) => {
+    knex('files')
+      .insert({path: path, data: data})
+      .then(console.log)
+  })
 }
