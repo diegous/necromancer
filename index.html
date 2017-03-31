@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8">
     <title>Necromancer</title>
-    <script type="text/javascript" src="./js/fileLoader.js"></script>
     <script type="text/javascript" src="./js/databaseLoader.js"></script>
+    <script type="text/javascript" src="./js/fileLoader.js"></script>
+    <script type="text/javascript" src="./js/fileMatchers.js"></script>
   </head>
   <body>
 
@@ -41,29 +42,46 @@
 
   <script>
 
+    let loadButton = document.getElementById('loadButton')
+    loadButton.onclick = function () {
+      filePath = document.getElementById('filePath')
+      loadFile(filePath.files[0].path)
+    }
+
+    let loadDataButton = document.getElementById('loadData')
+    loadDataButton.onclick = function () {
+      resultsEl = document.getElementById('results')
+      loadData(resultsEl)
+    }
+
+    var cellInserterForTableRow = function (row) {
+      return function (text) { row.insertCell(0).innerHTML = text === undefined ? "-" : text }
+    }
+
     Dexie.spawn(function*() {
-        let tableBody = document.getElementById('tableBody')
+      let tableBody = document.getElementById('tableBody')
 
-        db.files.toArray().then(function (array) {
-          array.forEach(function (file) {
-              tableRow = tableBody.insertRow(0)
+      db.files.toArray().then(function (array) {
+        array.forEach(function (file) {
+          tableRow = tableBody.insertRow(0)
 
-              tableRow.insertCell(0).innerHTML = file.id === undefined ? "-" : file.id
-              tableRow.insertCell(0).innerHTML = file.protocolo === undefined ? "-" : file.protocolo
-              tableRow.insertCell(0).innerHTML = file.nombrePaciente === undefined ? "-" : file.nombrePaciente
-              tableRow.insertCell(0).innerHTML = file.edad === undefined ? "-" : file.edad
-              tableRow.insertCell(0).innerHTML = file.medicoSolicitante === undefined ? "-" : file.medicoSolicitante
-              tableRow.insertCell(0).innerHTML = file.obraSocial === undefined ? "-" : file.obraSocial
-              tableRow.insertCell(0).innerHTML = file.materialRemitido === undefined ? "-" : file.materialRemitido
-              tableRow.insertCell(0).innerHTML = file.descripcionCitologica === undefined ? "-" : file.descripcionCitologica
-              tableRow.insertCell(0).innerHTML = file.diagnosticoOncologico === undefined ? "-" : file.diagnosticoOncologico
-              tableRow.insertCell(0).innerHTML = file.date === undefined ? "-" : file.date
-              tableRow.insertCell(0).innerHTML = file.fileNumber === undefined ? "-" : file.fileNumber
-          })
+          insertText = cellInserterForTableRow(tableRow)
+
+          insertText(file.id)
+          insertText(file.protocol)
+          insertText(file.patientName)
+          insertText(file.age)
+          insertText(file.doctorName)
+          insertText(file.insuranceCompay)
+          insertText(file.material)
+          insertText(file.description)
+          insertText(file.diagnosis)
+          insertText(file.date)
+          insertText(file.fileNumber)
         })
-
+      })
     }).catch (err => {
-        console.error ("Uh oh! " + err.stack);
+      console.error ("Error when " + err.stack);
     });
 
   </script>
