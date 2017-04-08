@@ -1,132 +1,36 @@
 const fs = require('fs')
-const knex = require('knex')({
-  client: 'sqlite3',
-  connection: {
-    filename: "./mydb.sqlite"
-  },
-  useNullAsDefault: true
-})
-
-knex.schema.createTableIfNotExists('files', function (table) {
-  table.increments()
-  table.string('path')
-  table.text('data')
-  table.timestamps()
-})
-
-const loadData = (el) => {
-  knex
-    .select('path', 'data')
-    .from('files')
-    .then((data) => {
-      el.textContent = data
-    })
-}
 
 const loadFile = (path) => {
-
-
   fs.readFile(path, 'utf-8', (err, data) => {
-    console.log(path)
-
     if (!err) {
       newFile = parseFile(data)
       // save newFile in database
     }
-
-    console.log("lala")
   })
 }
 
 
-// File parsing
-
-const parseFile = (data) => {
-  lines = data.split('\n')
-  matcher = regexMatcher(data)
-  optional = true
-  file = {}
-
-  // File header
-  matcher.match(headerTopBorderRegex)
-  matcher.match(headerTitleRegex)
-  matcher.match(headerSubtitleRegex)
-  matcher.match(headerAddressRegex)
-  file.protocol = matcher.match(protocolRegex)[1]
-  matcher.match(headerBlankRegex)
-  patientData = matcher.match(headerPatientDataRegex)
-  file.patientName = patientData[1]
-  file.patientAge = patientData[2]
-  matcher.match(headerBlankRegex)
-  doctorAndInsurance = matcher.match(headerDoctorAndInsuranceRegex)
-  file.doctorName = doctorAndInsurance[1]
-  file.insuranceCompay = doctorAndInsurance[2]
-  matcher.match(headerBottomBorderRegex)
-
-  // File body
-  // 'material' may or may not be present
-  file.material = ''
-  if (line = matcher.match(materialRegex, optional)){
-    file.material += line
-
-    while (!matcher.match(reportTitleRegex, optional))
-      file.material += matcher.match(materialRegex, optional)
-  } else {
-    matcher.match(reportTitleRegex)
-  }
-
-  matcher.match(reportTitleUnderscoreRegex)
-  matcher.match(descriptionTitleRegex)
-
-  // 'description' may not be present
-  file.description = ''
-  file.diagnosis = ''
-  if (line = matcher.match(descriptionTitleRegex, optional)) {
-    file.description += line
-
-    while (!(file.diagnosis = matcher.match(signatureRegex, optional)))
-      file.description += matcher.match(fullLineRegex)[1].concat(' ')
-  } else {
-    file.diagnosis = matcher.match(signatureRegex)
-  }
-
-  if (line = matcher.match(descriptionTitleRegex, optional)) {
-    file.diagnosis += line
-
-    while (!matcher.match(signatureRegex, optional))
-      file.diagnosis += matcher.match(fullLineRegex)[1].concat(' ')
-  }
-
-  diagnosis = matcher.match(diagnosisRegex)
-  matcher.match(blank)
-  note = matcher.match(noteRegex, optional)
-  matcher.match(blank)
-  matcher.match(blank)
-
-  // File footer
-  matcher.match(signatureRegex)
-  matcher.match(signature2Regex)
-  date = matcher.match(dateRegex)
-
-}
-
-// Given an array of lines it returns a function that receives a
+// Given an array of lines this object has a function that receives a
 // regex and advances through the file one line at a time triying
 // to match the regex. If there is no match an exception is thrown.
 // A boolean second argument can be passed that indicates if the
 // exception shound't be thrown.
-const regexMatcher = function(data) {
-  i: 0,
-  data: data,
-  match: function (regex, optional) => {
-    // Skip blank lines
-    while(data[this.i].length == 0) this.i++
 
-    match = regex.exec(data[this.i])
+class RegexMatcher {
+  constructor(data) {
+    this.i = 0
+    this.data = data
+  }
+
+  match(regex, optional) {
+    // Skip blank lines
+    while(this.data[this.i].trim().length == 0) this.i++
+
+    var match = regex.exec(this.data[this.i])
 
     if (match == null) {
       if (optional) return ''
-      else throw new RegexMatcherException(i)
+      else throw new RegexMatcherException(this.i)
     }
 
     this.i++
@@ -135,8 +39,143 @@ const regexMatcher = function(data) {
   }
 }
 
+var bodyRegexes = function(file) {
+  return [
+    {
+      regex: materialRegex,
+      containsData: true,
+      saveField: "material"
+    },
+    {
+      regex: reportTitleRegex,
+      containsData: true,
+      saveField: "reportType"
+    },
+    {
+      regex: reportTitleUnderscoreRegex,
+      containsData: false
+    },
+    {
+      regex: descriptionRegex,
+      containsData: true,
+      saveField: "description"
+    },
+    {
+      regex: diagnosisRegex,
+      containsData: true,
+      saveField: "diagnosis"
+    },
+    {
+      regex: signatureRegex,
+      containsData: false
+    }
+  ]
+}
+
+class BodyMatcher {
+  constructor(regexes, matcher) {
+    this.regexes = regexes
+    this.matcher = matcher
+    this.fullLineMatcher = paragraphRegex
+  }
+
+  nextMatch() {
+    var match
+    var i = 0
+    var optional = true
+    var lastIndex = this.regexes.length - 1
+
+    match = this.matcher.match(this.regexes[i].regex, optional)
+
+    while (!match && ++i <= lastIndex) {
+      match = this.matcher.match(this.regexes[i].regex, optional)
+    }
+
+    // If all failed, its a pargraph
+    if (!match)
+      return { match: null }
+
+    // if the last one failed, its the end of the file
+    else if (i == lastIndex)
+      return { match: match, finalMatcher: true }
+
+    // Otherwise, it's a match
+    else
+      return { match: match, regex: this.regexes[i] }
+  }
+
+  fullLineMatch() {
+    return this.matcher.match(this.fullLineMatcher)
+  }
+}
+
+
+// File parsing
+
+const parseFile = (data) => {
+  lines = data.split('\n')
+  matcher = new RegexMatcher(lines)
+  optional = true
+  file = {}
+
+  //  Header
+  // ========
+  matcher.match(headerTopBorderRegex)
+  matcher.match(headerTitleRegex)
+  matcher.match(headerSubtitleRegex)
+  matcher.match(headerAddressRegex)
+
+  file.protocol        = matcher.match(headerProtocolRegex)[1].trim()
+
+  matcher.match(headerBlankRegex)
+
+  patientData = matcher.match(headerPatientDataRegex)
+  file.patientName     = patientData[1].trim()
+  file.patientAge      = patientData[2].trim()
+
+  matcher.match(headerBlankRegex)
+
+  doctorAndInsurance   = matcher.match(headerDoctorAndInsuranceRegex)
+  file.doctorName      = doctorAndInsurance[1].trim()
+  file.insuranceCompay = doctorAndInsurance[2].trim()
+
+  matcher.match(headerBottomBorderRegex)
+
+
+  //  Body
+  // ======
+
+  bodyMatcher = new BodyMatcher(bodyRegexes(file), matcher)
+  result = bodyMatcher.nextMatch()
+
+  // Go throught all the optional body fields:
+  // material, description, diagnosis
+  while (!result.finalMatcher) {
+    regex = result.regex
+
+    if (regex.saveField) {
+      file[regex.saveField] = result.match[1].trim()
+
+      result = bodyMatcher.nextMatch()
+      while (!result.match) {
+        fullMatch = bodyMatcher.fullLineMatch()
+        file[regex.saveField] += " "+fullMatch[1].trim()
+        result = bodyMatcher.nextMatch()
+      }
+    } else {
+      result = bodyMatcher.nextMatch()
+    }
+  }
+
+  //  Footer
+  // ========
+  matcher.match(signature2Regex)
+  file.date = matcher.match(dateRegex)[1].trim()
+}
+
+
 function RegexMatcherException(lineNumber) {
-   this.lineNumber = lineNumber
-   this.message = "Couldn't parse line "+lineNumber
-   this.name = 'RegexMatcherException'
+  this.lineNumber = lineNumber
+  this.message = "Couldn't parse line "+lineNumber
+  this.name = 'RegexMatcherException'
 }
