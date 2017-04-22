@@ -11,7 +11,7 @@ DB_FIELDS = [
   'description',
   'diagnosis',
   'date',
-  'fileNumber'
+  'fileName'
 ]
 
 const Dexie = require('dexie');
