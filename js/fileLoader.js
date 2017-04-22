@@ -1,9 +1,10 @@
 const fs = require('fs')
 
-const loadFile = (path) => {
+const loadFile = (path, fileName) => {
   fs.readFile(path, 'utf-8', (err, data) => {
     if (!err) {
       newFile = parseFile(data)
+      newFile.fileName = fileName
       // save newFile in database
     }
   })
@@ -171,6 +172,8 @@ const parseFile = (data) => {
   // ========
   matcher.match(signature2Regex)
   file.date = matcher.match(dateRegex)[1].trim()
+
+  return file
 }
 
 

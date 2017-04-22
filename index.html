@@ -44,8 +44,10 @@
 
     let loadButton = document.getElementById('loadButton')
     loadButton.onclick = function () {
-      filePath = document.getElementById('filePath')
-      loadFile(filePath.files[0].path)
+      filePathElement = document.getElementById('filePath')
+      filePath = filePathElement.files[0].path
+      fileName = filePathElement.files[0].name
+      loadFile(filePath, fileName)
     }
 
     let loadDataButton = document.getElementById('loadData')
