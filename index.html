@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8">
     <title>Necromancer</title>
+    <script type="text/javascript" src="./js/databaseLoader.js"></script>
     <script type="text/javascript" src="./js/fileLoader.js"></script>
+    <script type="text/javascript" src="./js/fileMatchers.js"></script>
   </head>
   <body>
 
     <div>
       <h1>Cargar archivos desde carpeta</h1>
-      <input id="filePath" type="text" name="filePath">
+      <input id="filePath" type="file" name="filePath">
       <button id="loadButton">Load</button>
     </div>
 
@@ -17,6 +19,25 @@
       <h1>Archivos guardados</h1>
       <button id="loadData">Load</button>
       <p id="results"></p>
+
+      <table id="filesTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Protocolo</th>
+            <th>Nombre del Paciente</th>
+            <th>Edad</th>
+            <th>Medico Solicitante</th>
+            <th>Obra Social</th>
+            <th>Material Remitido</th>
+            <th>Descripcion Citologica</th>
+            <th>Diagnostico Oncologico</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
 
   <script>
@@ -24,7 +45,7 @@
     let loadButton = document.getElementById('loadButton')
     loadButton.onclick = function () {
       filePath = document.getElementById('filePath')
-      loadFile(filePath.value)
+      loadFile(filePath.files[0].path)
     }
 
     let loadDataButton = document.getElementById('loadData')
@@ -32,6 +53,36 @@
       resultsEl = document.getElementById('results')
       loadData(resultsEl)
     }
+
+    var cellInserterForTableRow = function (row) {
+      return function (text) { row.insertCell(0).innerHTML = text === undefined ? "-" : text }
+    }
+
+    Dexie.spawn(function*() {
+      let tableBody = document.getElementById('tableBody')
+
+      db.files.toArray().then(function (array) {
+        array.forEach(function (file) {
+          tableRow = tableBody.insertRow(0)
+
+          insertText = cellInserterForTableRow(tableRow)
+
+          insertText(file.id)
+          insertText(file.protocol)
+          insertText(file.patientName)
+          insertText(file.age)
+          insertText(file.doctorName)
+          insertText(file.insuranceCompay)
+          insertText(file.material)
+          insertText(file.description)
+          insertText(file.diagnosis)
+          insertText(file.date)
+          insertText(file.fileNumber)
+        })
+      })
+    }).catch (err => {
+      console.error ("Error when " + err.stack);
+    });
 
   </script>
 </html>
