@@ -11,13 +11,12 @@
 
     <div>
       <h1>Cargar archivos desde carpeta</h1>
-      <input id="filePath" type="file" name="filePath">
-      <button id="loadButton">Load</button>
+      <button id="loadButton">Abrir directorio</button>
     </div>
 
     <div>
       <h1>Archivos guardados</h1>
-      <button id="loadData">Load</button>
+      <button id="loadData">Cargar DB</button>
       <p id="results"></p>
 
       <table id="filesTable">
@@ -42,12 +41,38 @@
 
   <script>
 
+    const fs = require('fs')
+    const dialog = require('electron').remote.dialog
     let loadButton = document.getElementById('loadButton')
+
     loadButton.onclick = function () {
-      filePathElement = document.getElementById('filePath')
-      filePath = filePathElement.files[0].path
-      fileName = filePathElement.files[0].name
-      loadFile(filePath, fileName)
+      dialog.showOpenDialog({ properties: ['openDirectory'] }, function (paths) {
+        let dirPath = paths[0]
+        let encoding = 'CP437'
+        let Iconv = require('iconv').Iconv;
+        let iconv = new Iconv(encoding, 'UTF-8')
+
+        fs.readdir(dirPath, function (err, files) {
+          if (err) return;
+
+          files.forEach( function (fileName) {
+            // I don't know if this '/' will work on Window$ since it uses \ for dirs
+            let filePath = dirPath +'/'+ fileName
+
+            fs.readFile(filePath, function (err, data) {
+              if (err) return;
+
+              var buffer = iconv.convert(data)
+              var fileContent = buffer.toString('utf8')
+
+              newFile = parseFile(fileContent)
+              newFile.fileName = fileName
+
+              // save newFile in database
+            })
+          })
+        })
+      })
     }
 
     let loadDataButton = document.getElementById('loadData')

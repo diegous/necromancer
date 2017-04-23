@@ -1,7 +1,10 @@
 # Directories
 node_modules
 dist
+440
+parsed440
 
 # Files
 *.tgz
 *.log
+encoder.sh
