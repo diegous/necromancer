@@ -1,16 +1,3 @@
-const fs = require('fs')
-
-const loadFile = (path, fileName) => {
-  fs.readFile(path, 'utf-8', (err, data) => {
-    if (!err) {
-      newFile = parseFile(data)
-      newFile.fileName = fileName
-      // save newFile in database
-    }
-  })
-}
-
-
 // Given an array of lines this object has a function that receives a
 // regex and advances through the file one line at a time triying
 // to match the regex. If there is no match an exception is thrown.
@@ -31,7 +18,7 @@ class RegexMatcher {
 
     if (match == null) {
       if (optional) return ''
-      else throw new RegexMatcherException(this.i)
+      else throw new RegexMatcherException(this.i, this.data[this.i])
     }
 
     this.i++
@@ -69,6 +56,15 @@ var bodyRegexes = function(file) {
     {
       regex: signatureRegex,
       containsData: false
+    },
+    {
+      regex: signature2Regex,
+      containsData: false
+    },
+    {
+      regex: dateRegex,
+      containsData: true,
+      saveField: "date"
     }
   ]
 }
@@ -94,7 +90,7 @@ class BodyMatcher {
 
     // If all failed, its a pargraph
     if (!match)
-      return { match: null }
+      return { match: null, regex: null }
 
     // if the last one failed, its the end of the file
     else if (i == lastIndex)
@@ -168,17 +164,12 @@ const parseFile = (data) => {
     }
   }
 
-  //  Footer
-  // ========
-  matcher.match(signature2Regex)
-  file.date = matcher.match(dateRegex)[1].trim()
-
   return file
 }
 
 
-function RegexMatcherException(lineNumber) {
+function RegexMatcherException(lineNumber, lineContent) {
   this.lineNumber = lineNumber
-  this.message = "Couldn't parse line "+lineNumber
+  this.message = "Couldn't parse line "+lineNumber+" with text: "+lineContent
   this.name = 'RegexMatcherException'
 }

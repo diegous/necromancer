@@ -5,7 +5,9 @@ const electron = require('electron')
 const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
-// https://i2.wp.com/cloudup.com/logo/cloudup-salmon-logo.png
+// File encoding converter
+const Iconv = require('iconv').Iconv;
+
 
 const path = require('path')
 const url = require('url')
