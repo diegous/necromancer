@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Necromancer</title>
     <script type="text/javascript" src="./js/databaseLoader.js"></script>
-    <script type="text/javascript" src="./js/fileLoader.js"></script>
-    <script type="text/javascript" src="./js/fileMatchers.js"></script>
+    <!-- <script type="text/javascript" src="./js/fileLoader.js"></script> -->
+    <!-- <script type="text/javascript" src="./js/fileMatchers.js"></script> -->
   </head>
   <body>
 
@@ -42,6 +42,7 @@
   <script>
 
     const fs = require('fs')
+    const parseFile = require('./js/ParseFile')
     const dialog = require('electron').remote.dialog
     let loadButton = document.getElementById('loadButton')
 
@@ -68,6 +69,7 @@
               newFile = parseFile(fileContent)
               newFile.fileName = fileName
 
+              console.log(newFile)
               // save newFile in database
             })
           })
