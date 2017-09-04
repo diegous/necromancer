@@ -3,23 +3,57 @@
   <head>
     <meta charset="UTF-8">
     <title>Necromancer</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" onload="window.$ = window.jQuery = module.exports;"></script>
     <script type="text/javascript" src="./js/databaseLoader.js"></script>
-    <!-- <script type="text/javascript" src="./js/fileLoader.js"></script> -->
-    <!-- <script type="text/javascript" src="./js/fileMatchers.js"></script> -->
+    <script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
   </head>
   <body>
 
     <div>
       <h1>Cargar archivos desde carpeta</h1>
-      <button id="loadButton">Abrir directorio</button>
+      <button id="loadButton" class="btn">Abrir directorio</button>
+    </div>
+
+    <!-- Added files Modal -->
+    <div class="modal fade" id="addedFilesModal" role="dialog">
+      <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Archivos Agregados</h4>
+          </div>
+          <div class="modal-body">
+            <h2>Archivos agregados exitosamente:</h2>
+            <h2 id="totalAddedFiles">0</h2>
+
+            <div id="notAddedFilesTable" class="invisible">
+              <h4>Algunos archivos no pudieron ser agregados:</h4>
+              <table class="table table-hover">
+                <thead>
+                  <th>Nombre</th>
+                  <th>Protocolo</th>
+                  <th>Error</th>
+                </thead>
+                <tbody id="notAddedFilesList"></tbody>
+              </table>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <div>
       <h1>Archivos guardados</h1>
-      <button id="loadData">Cargar DB</button>
-      <p id="results"></p>
 
-      <table id="filesTable">
+      <table id="filesTable" class="table table-striped">
         <thead>
           <tr>
             <th>ID</th>
@@ -44,7 +78,11 @@
     const fs = require('fs')
     const parseFile = require('./js/ParseFile')
     const dialog = require('electron').remote.dialog
-    let loadButton = document.getElementById('loadButton')
+    const loadButton = document.getElementById('loadButton')
+    const totalAddedFilesText = document.getElementById('totalAddedFiles')
+    const notAddedFilesList = document.getElementById('notAddedFilesList');
+    const errorsTable = document.getElementById('notAddedFilesTable');
+    const tableBody = document.getElementById('tableBody')
 
     loadButton.onclick = function () {
       dialog.showOpenDialog({ properties: ['openDirectory'] }, function (paths) {
@@ -55,9 +93,12 @@
 
         fs.readdir(dirPath, function (err, files) {
           if (err) return;
+          let totalAddedFiles = {total: 0};
+          let filesNotSaved = [];
+          errorsTable.classList.add("invisible");
 
           files.forEach( function (fileName) {
-            // I don't know if this '/' will work on Window$ since it uses \ for dirs
+            // I don't know if this '/' will work on Window$ since it uses '\' for dirs
             let filePath = dirPath +'/'+ fileName
 
             fs.readFile(filePath, function (err, data) {
@@ -66,52 +107,77 @@
               var buffer = iconv.convert(data)
               var fileContent = buffer.toString('utf8')
 
-              newFile = parseFile(fileContent)
+              var newFile = parseFile(fileContent)
               newFile.fileName = fileName
 
-              console.log(newFile)
               // save newFile in database
+              addFileToDB(newFile, totalAddedFiles);
             })
           })
+
+          $('#addedFilesModal').modal();
         })
       })
     }
 
-    let loadDataButton = document.getElementById('loadData')
-    loadDataButton.onclick = function () {
-      resultsEl = document.getElementById('results')
-      loadData(resultsEl)
+    var addFileToDB = (newFile, totalAddedFiles) => {
+      db.files.add({
+        protocol:        newFile.protocol,
+        patientName:     newFile.patientName,
+        patientAge:      newFile.patientAge,
+        doctorName:      newFile.doctorName,
+        insuranceCompay: newFile.insuranceCompay,
+        material:        newFile.material,
+        reportType:      newFile.reportType,
+        description:     newFile.description,
+        diagnosis:       newFile.diagnosis,
+        date:            newFile.date,
+        fileName:        newFile.fileName,
+      }).then(file => {
+        totalAddedFilesText.innerHTML = ++(totalAddedFiles.total);
+        addFileToTable(newFile);
+      }).catch(function(error) {
+        let tableRow = notAddedFilesList.insertRow()
+        let addCell = cellInserterForTableRow(tableRow)
+        errorsTable.classList.remove("invisible");
+
+        addCell(newFile.fileName);
+        addCell(newFile.protocol);
+        addCell(error);
+        // filesNotSaved.push({fileName: newFile.fileName, protocol: newFile.protocol, error: error});
+      });
     }
 
     var cellInserterForTableRow = function (row) {
-      return function (text) { row.insertCell(0).innerHTML = text === undefined ? "-" : text }
+      return text => { row.insertCell().innerHTML = text || "-" }
     }
 
     Dexie.spawn(function*() {
-      let tableBody = document.getElementById('tableBody')
 
-      db.files.toArray().then(function (array) {
-        array.forEach(function (file) {
-          tableRow = tableBody.insertRow(0)
-
-          insertText = cellInserterForTableRow(tableRow)
-
-          insertText(file.id)
-          insertText(file.protocol)
-          insertText(file.patientName)
-          insertText(file.age)
-          insertText(file.doctorName)
-          insertText(file.insuranceCompay)
-          insertText(file.material)
-          insertText(file.description)
-          insertText(file.diagnosis)
-          insertText(file.date)
-          insertText(file.fileNumber)
-        })
+      db.files.toArray().then(array =>  {
+        array.forEach(addFileToTable);
       })
     }).catch (err => {
       console.error ("Error when " + err.stack);
     });
+
+    var addFileToTable = file => {
+      let tableRow = tableBody.insertRow(0)
+
+      let addCell = cellInserterForTableRow(tableRow)
+
+      addCell(file.id)
+      addCell(file.protocol)
+      addCell(file.patientName)
+      addCell(file.patientAge)
+      addCell(file.doctorName)
+      addCell(file.insuranceCompay)
+      addCell(file.material)
+      addCell(file.description)
+      addCell(file.diagnosis)
+      addCell(file.date)
+      addCell(file.fileNumber)
+    }
 
   </script>
 </html>

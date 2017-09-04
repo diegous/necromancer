@@ -1,7 +1,7 @@
 // Database fields
 DB_FIELDS = [
   '++id',
-  'protocol',
+  '&protocol',
   'patientName',
   'patientAge',
   'doctorName',
@@ -15,7 +15,7 @@ DB_FIELDS = [
 ]
 
 const Dexie = require('dexie');
-var db = new Dexie("file_database")
+var db = new Dexie("file_database");
 db.version(1).stores({
-    files: DB_FIELDS.join()
+  files: DB_FIELDS.join()
 });

@@ -6,6 +6,7 @@
 
 const RegexMatcher = require('./RegexMatcher')
 const BodyMatcher = require('./BodyMatcher')
+const ReportFile = require('./ReportFile')
 const bodyRegexes = require('./BodyRegexes')
 const { headerTopBorderRegex,
   headerTitleRegex,
@@ -74,7 +75,10 @@ const parseFile = (data) => {
     }
   }
 
-  return file
+  // Save the date (last regex)
+  file[result.regex.saveField] = result.match[1].trim();
+
+  return new ReportFile(file)
 }
 
 

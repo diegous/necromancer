@@ -25,7 +25,7 @@ class BodyMatcher {
 
     // if the last one failed, its the end of the file
     else if (i == lastIndex)
-      return { match: match, finalMatcher: true }
+      return { match: match, regex: this.regexes[i], finalMatcher: true }
 
     // Otherwise, it's a match
     else

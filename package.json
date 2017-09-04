@@ -9,6 +9,7 @@
     "rebuild": "electron-rebuild -f -w sqlite3"
   },
   "dependencies": {
+    "bootstrap": "^3.3.7",
     "dexie": "^1.5.1",
     "electron": "^1.4.1",
     "iconv": "^2.2.3",
