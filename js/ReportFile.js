@@ -1,4 +1,4 @@
-class File {
+class ReportFile {
   constructor(file) {
     this.id              = file.id || ''
     this.protocol        = file.protocol || ''
@@ -11,8 +11,8 @@ class File {
     this.description     = file.description || ''
     this.diagnosis       = file.diagnosis || ''
     this.date            = file.date || ''
-    this.fileNumber      = file.fileNumber || ''
+    this.fileName        = file.fileName || ''
   }
 }
 
-
+module.exports = ReportFile
